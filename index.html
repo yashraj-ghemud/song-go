@@ -27,27 +27,8 @@
     <!-- Particles Canvas -->
     <canvas id="particlesCanvas"></canvas>
 
-    <!-- Login Overlay -->
-    <div id="loginOverlay" class="login-overlay">
-        <div class="login-content">
-            <div class="login-logo">
-                <i class="fas fa-wave-square pulse-icon"></i>
-                <h1>Sonic Flow</h1>
-            </div>
-            <p class="login-subtitle">Immersive Audio Experience</p>
-            <button id="enterBtn" class="enter-btn">
-                <span>Enter Experience</span>
-                <div class="btn-glow"></div>
-            </button>
-            <div id="loginLoader" class="login-loader hidden">
-                <div class="loader-bar"></div>
-                <p>Authenticating...</p>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Interface -->
-    <div class="interface-container hidden" id="mainInterface">
+    <div class="interface-container" id="mainInterface">
 
         <!-- Top Bar -->
         <header class="top-bar">
@@ -55,7 +36,7 @@
                 <i class="fas fa-wave-square"></i> Sonic Flow
             </div>
             <div class="user-controls">
-                <!-- Login button removed from here as it's now the entry point -->
+                <a class="glow-btn" href="auth.html">Access Portal</a>
                 <div id="userProfile" class="user-profile">
                     <img src="" alt="User" id="userAvatar">
                     <span id="userName">User</span>

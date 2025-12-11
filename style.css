@@ -284,6 +284,34 @@ body {
     }
 }
 
+.redirect-hint,
+.session-hint {
+    margin-top: 20px;
+    padding: 15px 20px;
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    width: 320px;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.redirect-hint code {
+    display: block;
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--primary);
+    word-break: break-all;
+}
+
+.session-hint {
+    color: var(--text-muted);
+}
+
 /* --- Interface Container --- */
 .interface-container {
     height: 100%;

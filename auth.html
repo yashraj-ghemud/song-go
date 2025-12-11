@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic Flow Access Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="aurora-bg">
+        <div class="aurora-light"></div>
+        <div class="aurora-light"></div>
+        <div class="aurora-light"></div>
+    </div>
+
+    <canvas id="particlesCanvas"></canvas>
+
+    <div class="login-overlay active">
+        <div class="login-content">
+            <div class="login-logo">
+                <i class="fas fa-wave-square pulse-icon"></i>
+                <h1>Sonic Flow</h1>
+            </div>
+            <p class="login-subtitle">Spotify Access Portal</p>
+            <button id="enterBtn" class="enter-btn">
+                <span>Authenticate with Spotify</span>
+                <div class="btn-glow"></div>
+            </button>
+            <div id="loginLoader" class="login-loader hidden">
+                <div class="loader-bar"></div>
+                <p>Redirecting to Spotify...</p>
+            </div>
+            <div class="redirect-hint">
+                <p>Use this Redirect URI in your Spotify Dashboard:</p>
+                <code id="redirectUriHint"></code>
+            </div>
+            <div class="session-hint" id="sessionHint"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Notification</div>
+
+    <script src="auth.js"></script>
+</body>
+
+</html>

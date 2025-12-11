@@ -1,20 +1,22 @@
 /**
- * Sonic Flow - Immersive Music Experience
- * Logic: Particles, 3D Tilt, Spotify API Integration, Custom Login Flow
+ * Sonic Flow - Player Shell
+ * Handles Spotify token management, playlist rendering, and playback.
  */
 
 class SonicFlow {
     constructor() {
-        const canonicalPath = window.location.pathname.replace(/index\.html$/, '');
+        const basePath = window.location.pathname.replace(/index\.html$/, '');
+        this.paths = {
+            base: basePath,
+            auth: `${window.location.origin}${basePath}auth.html`
+        };
+
         this.config = {
             clientId: 'faf59564cd624852ba338d75c41810b5',
             playlistId: '3bvrnjeg4FHWy4mbvNvf4q',
-            redirectUri: `${window.location.origin}${canonicalPath}`,
+            redirectUri: `${window.location.origin}${basePath}index.html`,
             scopes: 'user-read-private user-read-email playlist-read-private'
         };
-
-        // Debug: Log the Redirect URI for the user to add to Spotify Dashboard
-        console.log('Configuration Redirect URI:', this.config.redirectUri);
 
         this.state = {
             token: null,
@@ -26,13 +28,7 @@ class SonicFlow {
         };
 
         this.elements = {
-            // Login Elements
-            loginOverlay: document.getElementById('loginOverlay'),
-            enterBtn: document.getElementById('enterBtn'),
-            loginLoader: document.getElementById('loginLoader'),
             mainInterface: document.getElementById('mainInterface'),
-
-            // Player Elements
             userProfile: document.getElementById('userProfile'),
             userAvatar: document.getElementById('userAvatar'),
             userName: document.getElementById('userName'),
@@ -63,38 +59,52 @@ class SonicFlow {
         this.initParticles();
         this.initTiltEffect();
         this.setupEventListeners();
+        this.bootstrapAuth();
+    }
 
-        // Check for cached token or hash
+    bootstrapAuth() {
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const accessToken = params.get('access_token');
+        const expiresIn = params.get('expires_in');
         const authError = params.get('error');
 
         if (accessToken) {
-            this.handleAuth(params);
-        } else if (authError) {
-            this.resetLoginUi();
-            this.showToast('Login was cancelled or failed. Please try again.', true);
+            this.persistToken(accessToken, expiresIn);
             window.location.hash = '';
-        } else {
-            const storedToken = localStorage.getItem('spotify_token');
-            const storedExpiry = localStorage.getItem('spotify_token_expiry');
+            this.onLoginSuccess();
+            return;
+        }
 
-            if (storedToken && storedExpiry && Date.now() < parseInt(storedExpiry)) {
-                this.state.token = storedToken;
-                this.onLoginSuccess();
-            } else {
-                this.resetLoginUi();
-            }
+        if (authError) {
+            this.showToast('Spotify login failed or was cancelled.', true);
+            setTimeout(() => window.location.href = this.paths.auth, 1800);
+            return;
+        }
+
+        const storedToken = localStorage.getItem('spotify_token');
+        const storedExpiry = localStorage.getItem('spotify_token_expiry');
+        if (storedToken && storedExpiry && Date.now() < parseInt(storedExpiry, 10)) {
+            this.state.token = storedToken;
+            this.onLoginSuccess();
+        } else {
+            this.showToast('Please authenticate via the Access Portal.', true);
+            setTimeout(() => window.location.href = this.paths.auth, 1500);
         }
     }
 
-    // --- Visual Effects ---
+    persistToken(accessToken, expiresIn) {
+        this.state.token = accessToken;
+        const expiryTime = Date.now() + (parseInt(expiresIn, 10) * 1000);
+        localStorage.setItem('spotify_token', accessToken);
+        localStorage.setItem('spotify_token_expiry', expiryTime.toString());
+    }
 
     initParticles() {
         const canvas = document.getElementById('particlesCanvas');
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        let particles = [];
+        const particles = [];
 
         const resize = () => {
             canvas.width = window.innerWidth;
@@ -114,16 +124,14 @@ class SonicFlow {
                 this.speedX = Math.random() * 0.5 - 0.25;
                 this.speedY = Math.random() * 0.5 - 0.25;
                 this.opacity = Math.random() * 0.5;
-                this.life = Math.random() * 100;
             }
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
-                this.life--;
-
-                if (this.life < 0 || this.x > canvas.width || this.x < 0 || this.y > canvas.height || this.y < 0) {
-                    this.reset();
-                }
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
             }
             draw() {
                 ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
@@ -137,7 +145,7 @@ class SonicFlow {
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
+            particles.forEach((p) => {
                 p.update();
                 p.draw();
             });
@@ -148,117 +156,76 @@ class SonicFlow {
 
     initTiltEffect() {
         const card = this.elements.tiltCard;
+        if (!card) return;
         document.addEventListener('mousemove', (e) => {
-            if (this.elements.mainInterface.classList.contains('hidden')) return;
-
             const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
             const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
             card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
         });
     }
 
-    // --- Auth & Login Flow ---
-
-    handleAuth(params) {
-        const accessToken = params.get('access_token');
-        const expiresIn = params.get('expires_in');
-
-        if (accessToken) {
-            this.state.token = accessToken;
-            const expiryTime = Date.now() + (parseInt(expiresIn) * 1000);
-            localStorage.setItem('spotify_token', accessToken);
-            localStorage.setItem('spotify_token_expiry', expiryTime);
-            window.location.hash = '';
-            this.onLoginSuccess();
-        } else {
-            this.resetLoginUi();
-            this.showToast('No token returned. Check your Redirect URI.', true);
-        }
-    }
-
-    startLoginFlow() {
-        // 1. Hide Button
-        this.elements.enterBtn.style.display = 'none';
-
-        // 2. Show Loader
-        this.elements.loginLoader.classList.remove('hidden');
-
-        // 3. Fake Delay for "System Check"
-        setTimeout(() => {
-            this.login();
-        }, 2000);
-    }
-
-    login() {
-        const authUrl = `https://accounts.spotify.com/authorize?client_id=${this.config.clientId}&response_type=token&redirect_uri=${encodeURIComponent(this.config.redirectUri)}&scope=${encodeURIComponent(this.config.scopes)}&show_dialog=true`;
-        window.location.href = authUrl;
-    }
-
     async onLoginSuccess() {
-        // Transition UI
-        this.elements.loginOverlay.classList.add('fade-out');
-        setTimeout(() => {
-            this.elements.mainInterface.classList.remove('hidden');
-        }, 500);
-
         try {
             await this.fetchUserProfile();
             await this.fetchPlaylist();
-            this.showToast('Welcome to Sonic Flow');
+            this.showToast('Connected to Spotify successfully!');
         } catch (error) {
-            console.error(error);
-            this.showToast('Connection failed', true);
-            this.resetLoginUi();
+            console.error('Initialization error:', error);
+            this.showToast('Failed to load Spotify data. Returning to Access Portal.', true);
+            setTimeout(() => window.location.href = this.paths.auth, 2000);
         }
-    }
-
-    resetLoginUi() {
-        // Ensure the overlay is visible and the button usable after failures
-        this.elements.loginOverlay.classList.remove('fade-out');
-        this.elements.mainInterface.classList.add('hidden');
-        this.elements.enterBtn.style.display = 'inline-flex';
-        this.elements.loginLoader.classList.add('hidden');
     }
 
     async fetchUserProfile() {
         const data = await this.spotifyRequest('https://api.spotify.com/v1/me');
         this.elements.userName.textContent = data.display_name;
-        if (data.images?.[0]?.url) this.elements.userAvatar.src = data.images[0].url;
+        if (data.images?.[0]?.url) {
+            this.elements.userAvatar.src = data.images[0].url;
+        }
     }
 
     async fetchPlaylist() {
         const data = await this.spotifyRequest(`https://api.spotify.com/v1/playlists/${this.config.playlistId}`);
         this.state.playlist = data.tracks.items
-            .filter(item => item.track.preview_url)
-            .map(item => ({
+            .filter((item) => item.track.preview_url)
+            .map((item) => ({
                 id: item.track.id,
                 title: item.track.name,
-                artist: item.track.artists.map(a => a.name).join(', '),
+                artist: item.track.artists.map((artist) => artist.name).join(', '),
                 cover: item.track.album.images[0]?.url,
                 previewUrl: item.track.preview_url
             }));
 
         if (this.state.playlist.length === 0) {
-            this.showToast('No previews available in this playlist', true);
-        } else {
-            this.renderPlaylist();
-            // Load first track without playing
-            this.loadTrack(0);
+            this.showToast('No previewable tracks found in this playlist.', true);
+            return;
         }
+
+        this.renderPlaylist();
+        this.loadTrack(0);
     }
 
     async spotifyRequest(url) {
         const response = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${this.state.token}` }
+            headers: {
+                Authorization: `Bearer ${this.state.token}`
+            }
         });
+
         if (response.status === 401) {
             localStorage.removeItem('spotify_token');
-            window.location.reload();
+            localStorage.removeItem('spotify_token_expiry');
+            this.showToast('Session expired. Redirecting to Access Portal.', true);
+            setTimeout(() => window.location.href = this.paths.auth, 1500);
+            throw new Error('Token expired');
         }
+
+        if (!response.ok) {
+            throw new Error(`Spotify API error: ${response.statusText}`);
+        }
+
         return response.json();
     }
-
-    // --- Player Logic ---
 
     renderPlaylist() {
         this.elements.trackList.innerHTML = '';
@@ -281,13 +248,10 @@ class SonicFlow {
         if (index < 0 || index >= this.state.playlist.length) return;
         const track = this.state.playlist[index];
         this.state.currentIndex = index;
-
         this.elements.trackTitle.textContent = track.title;
         this.elements.trackArtist.textContent = track.artist;
         this.elements.albumArt.src = track.cover;
         this.state.audio.src = track.previewUrl;
-
-        // Update active state in drawer
         document.querySelectorAll('.track-item').forEach((el, i) => {
             el.classList.toggle('active', i === index);
         });
@@ -304,9 +268,8 @@ class SonicFlow {
         }
 
         const shouldPlay = forcePlay !== null ? forcePlay : !this.state.isPlaying;
-
         if (shouldPlay) {
-            this.state.audio.play().catch(e => console.error(e));
+            this.state.audio.play().catch((error) => console.error('Playback failed', error));
             this.state.isPlaying = true;
             this.elements.playIcon.className = 'fas fa-pause';
             this.elements.albumArt.style.transform = 'scale(1.05)';
@@ -319,65 +282,63 @@ class SonicFlow {
     }
 
     setupEventListeners() {
-        this.elements.enterBtn.onclick = () => this.startLoginFlow();
-        this.elements.playBtn.onclick = () => this.togglePlay();
+        this.elements.playBtn.addEventListener('click', () => this.togglePlay());
 
-        this.elements.prevBtn.onclick = () => {
+        this.elements.prevBtn.addEventListener('click', () => {
             let newIndex = this.state.currentIndex - 1;
             if (newIndex < 0) newIndex = this.state.playlist.length - 1;
             this.playTrack(newIndex);
-        };
+        });
 
-        this.elements.nextBtn.onclick = () => {
+        this.elements.nextBtn.addEventListener('click', () => {
             let newIndex = this.state.currentIndex + 1;
             if (newIndex >= this.state.playlist.length) newIndex = 0;
             this.playTrack(newIndex);
-        };
+        });
 
-        // Audio Events
         this.state.audio.ontimeupdate = () => {
+            if (!this.state.audio.duration) return;
             const progress = (this.state.audio.currentTime / this.state.audio.duration) * 100;
             this.elements.progressFill.style.width = `${progress}%`;
         };
 
         this.state.audio.onended = () => this.elements.nextBtn.click();
 
-        // Progress Bar Interaction
-        this.elements.progressBar.onclick = (e) => {
+        this.elements.progressBar.addEventListener('click', (event) => {
             const rect = this.elements.progressBar.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
+            const percent = (event.clientX - rect.left) / rect.width;
             this.state.audio.currentTime = percent * this.state.audio.duration;
-        };
+        });
 
-        this.elements.progressBar.onmousemove = (e) => {
+        this.elements.progressBar.addEventListener('mousemove', (event) => {
             const rect = this.elements.progressBar.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            const time = percent * 30; // Preview is 30s
+            const percent = (event.clientX - rect.left) / rect.width;
+            const time = percent * 30;
             this.elements.timeTooltip.textContent = `0:${Math.floor(time).toString().padStart(2, '0')}`;
             this.elements.timeTooltip.style.left = `${percent * 100}%`;
-        };
+        });
 
-        // Volume
-        this.elements.volumeSlider.onclick = (e) => {
+        this.elements.volumeSlider.addEventListener('click', (event) => {
             const rect = this.elements.volumeSlider.getBoundingClientRect();
-            const percent = 1 - (e.clientY - rect.top) / rect.height;
+            const percent = 1 - (event.clientY - rect.top) / rect.height;
             this.state.volume = Math.max(0, Math.min(1, percent));
             this.state.audio.volume = this.state.volume;
             this.elements.volumeLevel.style.height = `${this.state.volume * 100}%`;
-        };
+        });
 
-        // Drawer
-        this.elements.playlistTrigger.onclick = () => {
+        this.elements.playlistTrigger.addEventListener('click', () => {
             this.elements.playlistDrawer.classList.add('open');
-        };
-        this.elements.closeDrawer.onclick = () => {
+        });
+
+        this.elements.closeDrawer.addEventListener('click', () => {
             this.elements.playlistDrawer.classList.remove('open');
-        };
+        });
     }
 
-    showToast(msg, isError = false) {
+    showToast(message, isError = false) {
+        if (!this.elements.toast) return;
         const toast = this.elements.toast;
-        toast.textContent = msg;
+        toast.textContent = message;
         toast.style.background = isError ? '#ff4444' : 'white';
         toast.style.color = isError ? 'white' : 'black';
         toast.classList.add('show');
@@ -385,7 +346,6 @@ class SonicFlow {
     }
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', () => {
     window.app = new SonicFlow();
-});pus
+});
