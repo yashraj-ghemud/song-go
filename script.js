@@ -5,10 +5,11 @@
 
 class SonicFlow {
     constructor() {
+        const canonicalPath = window.location.pathname.replace(/index\.html$/, '');
         this.config = {
             clientId: 'faf59564cd624852ba338d75c41810b5',
             playlistId: '3bvrnjeg4FHWy4mbvNvf4q',
-            redirectUri: window.location.origin + window.location.pathname,
+            redirectUri: `${window.location.origin}${canonicalPath}`,
             scopes: 'user-read-private user-read-email playlist-read-private'
         };
 
@@ -67,9 +68,14 @@ class SonicFlow {
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
         const accessToken = params.get('access_token');
+        const authError = params.get('error');
 
         if (accessToken) {
             this.handleAuth(params);
+        } else if (authError) {
+            this.resetLoginUi();
+            this.showToast('Login was cancelled or failed. Please try again.', true);
+            window.location.hash = '';
         } else {
             const storedToken = localStorage.getItem('spotify_token');
             const storedExpiry = localStorage.getItem('spotify_token_expiry');
@@ -78,7 +84,7 @@ class SonicFlow {
                 this.state.token = storedToken;
                 this.onLoginSuccess();
             } else {
-                // Show login screen (default state)
+                this.resetLoginUi();
             }
         }
     }
@@ -164,6 +170,9 @@ class SonicFlow {
             localStorage.setItem('spotify_token_expiry', expiryTime);
             window.location.hash = '';
             this.onLoginSuccess();
+        } else {
+            this.resetLoginUi();
+            this.showToast('No token returned. Check your Redirect URI.', true);
         }
     }
 
@@ -199,7 +208,16 @@ class SonicFlow {
         } catch (error) {
             console.error(error);
             this.showToast('Connection failed', true);
+            this.resetLoginUi();
         }
+    }
+
+    resetLoginUi() {
+        // Ensure the overlay is visible and the button usable after failures
+        this.elements.loginOverlay.classList.remove('fade-out');
+        this.elements.mainInterface.classList.add('hidden');
+        this.elements.enterBtn.style.display = 'inline-flex';
+        this.elements.loginLoader.classList.add('hidden');
     }
 
     async fetchUserProfile() {
@@ -370,4 +388,4 @@ class SonicFlow {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new SonicFlow();
-});
+});pus
