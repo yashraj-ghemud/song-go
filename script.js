@@ -64,10 +64,17 @@ class SonicFlow {
 
     bootstrapAuth() {
         const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const expiresIn = params.get('expires_in');
-        const authError = params.get('error');
+        const hashParams = new URLSearchParams(hash);
+        
+        // Also check query parameters for errors (standard OAuth2 behavior)
+        const search = window.location.search.substring(1);
+        const searchParams = new URLSearchParams(search);
+
+        const accessToken = hashParams.get('access_token');
+        const expiresIn = hashParams.get('expires_in');
+        
+        // Check both sources for error
+        const authError = hashParams.get('error') || searchParams.get('error');
 
         if (accessToken) {
             this.persistToken(accessToken, expiresIn);
@@ -77,8 +84,10 @@ class SonicFlow {
         }
 
         if (authError) {
-            this.showToast('Spotify login failed or was cancelled.', true);
-            setTimeout(() => window.location.href = this.paths.auth, 1800);
+            console.error('Spotify Auth Error:', authError);
+            this.showToast(`Login failed: ${authError}`, true);
+            // Increased timeout so user can read the error
+            setTimeout(() => window.location.href = this.paths.auth, 4000);
             return;
         }
 
