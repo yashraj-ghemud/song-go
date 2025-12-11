@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic Flow - Immersive Music Experience</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Dynamic Background -->
+    <div class="aurora-bg">
+        <div class="aurora-light"></div>
+        <div class="aurora-light"></div>
+        <div class="aurora-light"></div>
+    </div>
+
+    <!-- Particles Canvas -->
+    <canvas id="particlesCanvas"></canvas>
+
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-content">
+            <div class="login-logo">
+                <i class="fas fa-wave-square pulse-icon"></i>
+                <h1>Sonic Flow</h1>
+            </div>
+            <p class="login-subtitle">Immersive Audio Experience</p>
+            <button id="enterBtn" class="enter-btn">
+                <span>Enter Experience</span>
+                <div class="btn-glow"></div>
+            </button>
+            <div id="loginLoader" class="login-loader hidden">
+                <div class="loader-bar"></div>
+                <p>Authenticating...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div class="interface-container hidden" id="mainInterface">
+
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="logo">
+                <i class="fas fa-wave-square"></i> Sonic Flow
+            </div>
+            <div class="user-controls">
+                <!-- Login button removed from here as it's now the entry point -->
+                <div id="userProfile" class="user-profile">
+                    <img src="" alt="User" id="userAvatar">
+                    <span id="userName">User</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Central Player Card -->
+        <main class="player-stage">
+            <div class="glass-card" id="tiltCard">
+                <div class="visualizer-ring"></div>
+
+                <div class="album-art-wrapper">
+                    <img src="https://via.placeholder.com/400" alt="Album Art" id="mainAlbumArt" class="album-art">
+                    <div class="vinyl-effect"></div>
+                </div>
+
+                <div class="track-info-large">
+                    <h1 id="mainTitle" class="title-animate">Connect to Start</h1>
+                    <h2 id="mainArtist" class="artist-animate">Your Music Journey</h2>
+                </div>
+
+                <div class="progress-container-large" id="progressBar">
+                    <div class="progress-track"></div>
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-glow"></div>
+                    <div class="time-tooltip" id="timeTooltip">0:00</div>
+                </div>
+
+                <div class="controls-large">
+                    <button class="ctrl-btn secondary" id="shuffleBtn"><i class="fas fa-random"></i></button>
+                    <button class="ctrl-btn primary" id="prevBtn"><i class="fas fa-step-backward"></i></button>
+                    <button class="play-btn-giant" id="playPauseBtn">
+                        <div class="play-icon"><i class="fas fa-play"></i></div>
+                        <div class="pulse-ring"></div>
+                    </button>
+                    <button class="ctrl-btn primary" id="nextBtn"><i class="fas fa-step-forward"></i></button>
+                    <button class="ctrl-btn secondary" id="repeatBtn"><i class="fas fa-redo"></i></button>
+                </div>
+
+                <div class="volume-floater">
+                    <i class="fas fa-volume-up"></i>
+                    <div class="volume-slider-wrapper" id="volumeBar">
+                        <div class="volume-level" id="volumeFill"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Playlist Drawer Trigger -->
+        <button class="playlist-trigger" id="playlistTrigger">
+            <i class="fas fa-list-ul"></i>
+            <span>Playlist</span>
+        </button>
+
+        <!-- Playlist Drawer -->
+        <div class="playlist-drawer" id="playlistDrawer">
+            <div class="drawer-header">
+                <h3>Current Queue</h3>
+                <button class="close-drawer" id="closeDrawer"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="track-list" id="trackList">
+                <!-- Tracks injected here -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">Notification</div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
